@@ -12,10 +12,10 @@ $this->title = $name;
 <div class="site-error">
 
     <div class="alert alert-danger">
-        <?= nl2br(Html::encode($message)) ?>
+        <?= Html::encode($this->title) ?> <?= nl2br(Html::encode($message)) ?>
     </div>
 
-    <h1><?= Html::encode($this->title) ?></h1>
-        <h2>Ох... Вы что то сломали, не делайте так больше!</h2>
+
+    <h2>Ох... Вы опять что то сломали, не делайте так больше...</h2>
 
 </div>

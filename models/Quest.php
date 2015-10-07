@@ -25,21 +25,22 @@ class Quest extends \yii\db\ActiveRecord
     const TYPE_ONE = 'one-at-once';
 
     const TIMEOUT_UNLIMITED = null;
-    const TIMEOUT_30M = '30 minutes';
-    const TIMEOUT_1H = '1 hour';
-    const TIMEOUT_3H = '3 hours';
-    const TIMEOUT_6H = '6 hours';
-    const TIMEOUT_12H = '12 hours';
-    const TIMEOUT_24H = '24 hours';
-    const TIMEOUT_3D = '3 days';
-    const TIMEOUT_1W = '1 week';
+    const TIMEOUT_30M = '+30 minutes';
+    const TIMEOUT_1H = '+1 hour';
+    const TIMEOUT_3H = '+3 hours';
+    const TIMEOUT_6H = '+6 hours';
+    const TIMEOUT_12H = '+12 hours';
+    const TIMEOUT_24H = '+24 hours';
+    const TIMEOUT_3D = '+3 days';
+    const TIMEOUT_1W = '+1 week';
 
     /**
      * @param null $v
      * @return array|null
      */
-    public static function timeout($v = null, $ln = null){
-        switch($ln){
+    public static function timeout($v = null, $ln = null)
+    {
+        switch ($ln) {
             case "val":
                 $list = [
                     self::TIMEOUT_UNLIMITED => self::TIMEOUT_UNLIMITED,
@@ -68,18 +69,19 @@ class Quest extends \yii\db\ActiveRecord
                 break;
         }
 
-        if(is_null($v))
+        if (is_null($v))
             return $list;
 
-        return isset($list[$v])?$list[$v]:null;
+        return isset($list[$v]) ? $list[$v] : null;
     }
 
     /**
      * @param null $v
      * @return array|null
      */
-    public static function type($v = null, $ln = null){
-        switch($ln){
+    public static function type($v = null, $ln = null)
+    {
+        switch ($ln) {
             default:
                 $list = [
                     self::TYPE_ALL => 'Все сразу',
@@ -88,10 +90,10 @@ class Quest extends \yii\db\ActiveRecord
                 break;
         }
 
-        if(is_null($v))
+        if (is_null($v))
             return $list;
 
-        return isset($list[$v])?$list[$v]:null;
+        return isset($list[$v]) ? $list[$v] : null;
     }
 
 
@@ -102,6 +104,7 @@ class Quest extends \yii\db\ActiveRecord
     {
         return 'questionnaire';
     }
+
     /**
      * @inheritdoc
      */
@@ -109,7 +112,7 @@ class Quest extends \yii\db\ActiveRecord
     {
         return [
             [['title'], 'required'],
-            [['timeout'], 'integer'],
+            [['timeout'], 'safe'],
             [['title'], 'string', 'max' => 255],
             [['type'], 'string', 'max' => 40],
         ];
@@ -126,6 +129,38 @@ class Quest extends \yii\db\ActiveRecord
             'timeout' => 'Таймаут',
             'type' => 'Как показывать вопросы?',
         ];
+    }
+
+    public function beforeValidate()
+    {
+        parent::beforeValidate();
+
+        if ($this->timeout) {
+            $this->timeout = strtotime($this->timeout)-time();
+        }
+
+        return true;
+    }
+
+    public function afterFind()
+    {
+        parent::afterFind();
+
+        if ($this->timeout !== null) {
+            foreach (self::timeout(null, 'val') as $time) {
+                if (time() + $this->timeout == strtotime($time))
+                    return $this->timeout = self::timeout($time);
+            }
+        }
+
+        return $this->timeout = self::TIMEOUT_UNLIMITED;
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getQuestions(){
+        return $this->hasMany(Question::className(), ['quest_id'=>'id']);
     }
 
 }

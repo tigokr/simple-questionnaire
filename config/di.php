@@ -12,3 +12,6 @@
         'url' => ['/'],
     ],
 ]);
+
+// Other
+require(__DIR__ . '/../shortcuts.php');

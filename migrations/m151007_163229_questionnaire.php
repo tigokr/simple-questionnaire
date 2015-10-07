@@ -26,6 +26,7 @@ class m151007_163229_questionnaire extends Migration
             'id' => $this->primaryKey(),
             'quest_id' => $this->integer(),
             'type' => $this->string(40)->notNull()->defaultValue(Question::TYPE_TEXTINPUT),
+            'text' => $this->text()->notNull(),
             'data' => $this->text()->notNull(),
         ], $tableOptions);
         $this->createIndex('Question_idx_quest_id', Question::tableName(), 'quest_id');

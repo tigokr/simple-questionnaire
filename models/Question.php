@@ -16,19 +16,42 @@ use Yii;
  * @property integer $id
  * @property integer $quest_id
  * @property string $type
+ * @property string $text
  * @property string $data
  */
 class Question extends \yii\db\ActiveRecord
 {
 
-    const TYPE_DROPDOWN = 'dropdownList';
+    public $question;
+
     const TYPE_TEXTINPUT = 'textInput';
-    const TYPE_PASSWORD = 'password';
     const TYPE_TEXTAREA = 'textarea';
-    const TYPE_CHECKBOX = 'checkbox';
     const TYPE_RADIOLIST = 'radioList';
-    const TYPE_CHECKBOXLIST = 'checkboxList';
-    const TYPE_WIDGET = 'widget';
+    const TYPE_FILE = 'fileInput';
+
+    /**
+     * @param null $v
+     * @return array|null
+     */
+    public static function type($v = null, $ln = null)
+    {
+        switch ($ln) {
+            default:
+                $list = [
+                    self::TYPE_TEXTINPUT => 'Краткий ответ',
+                    self::TYPE_TEXTAREA => 'Объёмный ответ',
+                    self::TYPE_RADIOLIST => 'Выбор варинатов ответа',
+                    self::TYPE_FILE => 'Файл',
+                ];
+                break;
+        }
+
+        if (is_null($v))
+            return $list;
+
+        return isset($list[$v]) ? $list[$v] : null;
+    }
+
 
     /**
      * @inheritdoc
@@ -45,9 +68,10 @@ class Question extends \yii\db\ActiveRecord
     {
         return [
             [['quest_id'], 'integer'],
-            [['data'], 'required'],
+            [['text'], 'required'],
             [['data'], 'string'],
             [['type'], 'string', 'max' => 40],
+            [['question'], 'safe'],
         ];
     }
 
@@ -60,6 +84,7 @@ class Question extends \yii\db\ActiveRecord
             'id' => 'ID',
             'quest_id' => 'Quest ID',
             'type' => 'Тип',
+            'text' => 'Вопрос',
             'data' => 'Data',
         ];
     }
@@ -67,8 +92,27 @@ class Question extends \yii\db\ActiveRecord
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getQuest(){
-        return $this->hasOne(Quest::className(), ['id'=>'quest_id']);
+    public function getQuest()
+    {
+        return $this->hasOne(Quest::className(), ['id' => 'quest_id']);
+    }
+
+    public function beforeValidate(){
+        parent::beforeValidate();
+
+        if($this->type == self::TYPE_RADIOLIST && isset($this->question['responses'])) {
+            $this->question['responses'] = array_values($this->question['responses']);
+        } else {
+            unset($this->question['responses']);
+        }
+
+        $this->data = \yii\helpers\Json::encode($this->question);
+        return true;
+    }
+
+    public function afterFind(){
+        parent::afterFind();
+        $this->question = \yii\helpers\Json::decode($this->data);
     }
 
 }

@@ -2,19 +2,21 @@
 
 namespace app\controllers;
 
-use app\models\Quest;
+use app\models\Question;
 use app\models\search\QuestSearch;
+use app\service\QuestService;
 use Yii;
+use yii\base\Model;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use yii\web\Controller;
-use yii\web\NotFoundHttpException;
 
 /**
  * QuestController implements the CRUD actions for Quest model.
  */
 class QuestController extends Controller
 {
+
     public function behaviors()
     {
         return [
@@ -58,8 +60,10 @@ class QuestController extends Controller
      */
     public function actionView($id)
     {
+        $model = \Yii::$app->q->getQuest($id, false);
+
         return $this->render('view', [
-            'model' => $this->findModel($id),
+            'model' => $model,
         ]);
     }
 
@@ -70,15 +74,16 @@ class QuestController extends Controller
      */
     public function actionCreate()
     {
-        $model = new Quest();
+        $model = \Yii::$app->q->getQuest();
 
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+        if ($model->load(Yii::$app->request->post()) && \Yii::$app->q->saveQuest($model)) {
             return $this->redirect(['view', 'id' => $model->id]);
-        } else {
-            return $this->render('create', [
-                'model' => $model,
-            ]);
         }
+
+        return $this->render('create', [
+            'model' => $model,
+        ]);
+
     }
 
     /**
@@ -89,15 +94,16 @@ class QuestController extends Controller
      */
     public function actionUpdate($id)
     {
-        $model = $this->findModel($id);
+        $model = \Yii::$app->q->getQuest($id, false);
 
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+        if ($model->load(Yii::$app->request->post()) && \Yii::$app->q->saveQuest($model)) {
             return $this->redirect(['view', 'id' => $model->id]);
-        } else {
-            return $this->render('update', [
-                'model' => $model,
-            ]);
         }
+
+        return $this->render('update', [
+            'model' => $model,
+        ]);
+
     }
 
     /**
@@ -108,24 +114,35 @@ class QuestController extends Controller
      */
     public function actionDelete($id)
     {
-        $this->findModel($id)->delete();
+        \Yii::$app->q->deleteQuest($id, false);
 
         return $this->redirect(['index']);
     }
 
-    /**
-     * Finds the Quest model based on its primary key value.
-     * If the model is not found, a 404 HTTP exception will be thrown.
-     * @param integer $id
-     * @return Quest the loaded model
-     * @throws NotFoundHttpException if the model cannot be found
-     */
-    protected function findModel($id)
-    {
-        if (($model = Quest::findOne($id)) !== null) {
-            return $model;
-        } else {
-            throw new NotFoundHttpException('The requested page does not exist.');
+    public function actionQuestions($quest_id) {
+        $one_more_please = \Yii::$app->request->post('one_more_please');
+
+        /** @var QuestService $q */
+        $q = \Yii::$app->q;
+        $quest = \Yii::$app->q->getQuest($quest_id);
+        $questions = \Yii::$app->q->getQuestions($quest_id);
+
+        if(\Yii::$app->request->post()) {
+            $questions = $q->loadQuestions($quest, \Yii::$app->request->post('Question'));
+
+            if($q->saveQuestions($quest, $questions) && $one_more_please !== 'yes') {
+                return $this->redirect(['view', 'id' => $quest->id]);
+            }
         }
+
+        if($one_more_please === 'yes') {
+            $questions [] = new Question();
+        }
+
+        return $this->render('questions', [
+            'questions' => $questions,
+            'quest' => $quest,
+        ]);
     }
+
 }

@@ -26,8 +26,18 @@ $this->params['breadcrumbs'][] = $this->title;
 
             'id',
             'title',
-            'timeout:datetime',
-            'type',
+            [
+                'attribute' => 'timeout',
+                'filter' => \app\models\Quest::timeout(),
+            ],
+            [
+                'attribute' => 'type',
+                'value' => function($model) {
+                    return $model::type($model->type);
+                },
+                'filter' => \app\models\Quest::type(),
+            ],
+
 
             ['class' => \yii\grid\ActionColumn::className()],
         ],
