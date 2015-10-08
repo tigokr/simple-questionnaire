@@ -10,7 +10,6 @@ use app\models\Quest;
 use app\models\Question;
 use app\models\Result;
 use yii\helpers\ArrayHelper;
-use yii\helpers\Html;
 use yii\web\NotFoundHttpException;
 use yii\widgets\DetailView;
 
@@ -22,9 +21,6 @@ use yii\widgets\DetailView;
  */
 class QuestService extends \yii\base\Component implements \yii\base\BootstrapInterface
 {
-
-    public $timeout = 3 * 60 * 60;
-
     const E_OPEN_NEW_QUEST = 'E_OPEN_NEW_QUEST';
     const E_SAVE_NEW_QUEST = 'E_SAVE_NEW_QUEST';
     const E_SAVE_QUEST = 'E_SAVE_QUEST';
