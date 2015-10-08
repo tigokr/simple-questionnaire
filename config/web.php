@@ -12,7 +12,6 @@ $config = [
     'components' => [
         'q' => [
             'class' => 'app\service\QuestService',
-            'timeout' => 3 * 60 * 60, // 3h
         ],
 
         'request' => [
