@@ -74,8 +74,7 @@ AppAsset::register($this);
 
 <footer class="footer">
     <div class="container">
-        <p class="pull-left">&copy; <?= \Yii::$app->name; ?> <?= date('Y') ?></p>
-
+        <p class="pull-left"><a href="https://github.com/tigokr/simple-questionnaire">repo</a> &copy; <?= \Yii::$app->name; ?> <?= date('Y') ?></p>
         <p class="pull-right"><?php echo  !Yii::$app->user->isGuest?'': Html::a('Вход', ['/site/login']); ?></p>
     </div>
 </footer>
