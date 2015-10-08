@@ -1,5 +1,7 @@
 # simple-questionnaire
-Простой опросник
+Простой опросник. Умеет отправлять инвайты и присылать результаты на почту.
+
+Simple questionnaire for applicants. Invates.
 
 git clone ...
 
