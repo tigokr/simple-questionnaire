@@ -24,22 +24,40 @@ $this->params['breadcrumbs'][] = $this->title;
         ]) ?>
     </p>
 
-    <?= DetailView::widget([
-        'model' => $model,
-        'attributes' => [
-            'id',
-            'key',
-            'email:email',
-            'first_name',
-            'second_name',
-            'gender:boolean',
-            'birthday',
-            'location',
-            'start_at',
-            'finish_at',
-            'quest_id',
-            'data:ntext',
+    <?php
+
+    $attributes = [
+        'id',
+        'key',
+        'email:email',
+        [
+            'attribute' => 'quest_id',
+            'format' => 'html',
+            'value' => $model->quest?Html::a($model->quest->title, $model->quest->url):null,
         ],
+        'first_name',
+        'second_name',
+        [
+            'attribute'=> 'gender',
+            'value' => $model->gender?'Мужчина':'Женщина',
+        ],
+        'birthday:date',
+        'location',
+        'invated_at:datetime',
+        'start_at:datetime',
+        'finish_at:datetime',
+    ];
+
+    if(!empty($model->results)) {
+        $attributes[] = ['label' => 'Ответы на вопросы', 'value'=>''];
+        foreach ($model->results as $r) {
+            $attributes[] = ['label' => $r['question'], 'value'=>$r['response']];
+        }
+    }
+
+    echo DetailView::widget([
+        'model' => $model,
+        'attributes' => $attributes,
     ]) ?>
 
 </div>

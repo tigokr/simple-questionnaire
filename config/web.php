@@ -11,8 +11,8 @@ $config = [
     'language' => 'ru',
     'components' => [
         'q' => [
-            'class'=>'app\service\QuestService',
-            'timeout' => 3*60*60, // 3h
+            'class' => 'app\service\QuestService',
+            'timeout' => 3 * 60 * 60, // 3h
         ],
 
         'request' => [
@@ -30,11 +30,9 @@ $config = [
             'errorAction' => 'site/error',
         ],
         'mailer' => [
-            'class' => 'yii\swiftmailer\Mailer',
-            // send all mails to a file by default. You have to set
-            // 'useFileTransport' to false and configure a transport
-            // for the mailer to send real emails.
-            'useFileTransport' => false,
+            'class' => yii\swiftmailer\Mailer::className(),
+            'useFileTransport' => true,
+
         ],
         'log' => [
             'traceLevel' => YII_DEBUG ? 3 : 0,
@@ -46,14 +44,12 @@ $config = [
             ],
         ],
         'db' => require(__DIR__ . '/db.php'),
-        /*
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
             ],
         ],
-        */
     ],
     'params' => $params,
 ];

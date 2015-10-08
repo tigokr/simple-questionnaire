@@ -37,6 +37,10 @@ AppAsset::register($this);
         'options' => ['class' => 'navbar-nav navbar-right'],
         'items' => [
             [
+                'label' => 'Пригласить',
+                'url' => ['/quest/invite'],
+            ],
+            [
                 'label' => 'Опросы',
                 'url' => ['/quest/index'],
             ],
@@ -58,6 +62,12 @@ AppAsset::register($this);
         <?= Breadcrumbs::widget([
             'links' => isset($this->params['breadcrumbs']) ? $this->params['breadcrumbs'] : [],
         ]) ?>
+        <?php if (Yii::$app->session->hasFlash('alert')): ?>
+            <?php echo \yii\bootstrap\Alert::widget([
+                'body' => \yii\helpers\ArrayHelper::getValue(Yii::$app->session->getFlash('alert'), 'body'),
+                'options' => \yii\helpers\ArrayHelper::getValue(Yii::$app->session->getFlash('alert'), 'options'),
+            ]) ?>
+        <?php endif; ?>
         <?= $content ?>
     </div>
 </div>

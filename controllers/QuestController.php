@@ -2,6 +2,7 @@
 
 namespace app\controllers;
 
+use app\models\InviteForm;
 use app\models\Question;
 use app\models\search\QuestSearch;
 use app\service\QuestService;
@@ -10,6 +11,7 @@ use yii\base\Model;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use yii\web\Controller;
+use yii\web\NotFoundHttpException;
 
 /**
  * QuestController implements the CRUD actions for Quest model.
@@ -26,6 +28,11 @@ class QuestController extends Controller
                     [
                         'allow' => true,
                         'roles' => ['@'],
+                    ],
+                    [
+                        'actions' => ['start', 'run'],
+                        'allow' => true,
+                        'roles' => ['?'],
                     ],
                 ],
             ],
@@ -142,6 +149,60 @@ class QuestController extends Controller
         return $this->render('questions', [
             'questions' => $questions,
             'quest' => $quest,
+        ]);
+    }
+
+    public function actionInvite(){
+        /** @var QuestService $q */
+        $q = \Yii::$app->q;
+
+        $model = new InviteForm();
+
+        if($model->load(\Yii::$app->request->post()) && $model->validate()) {
+            $key = $q->invate($model->quest_id, $model->email);
+            \Yii::$app->session->setFlash('alert', [
+                'body' =>'Инвайт отправлен!',
+                'options' => ['class' => 'alert alert-success']
+            ]);
+            return $this->refresh();
+        }
+
+        return $this->render('invite', [
+            'model' => $model,
+        ]);
+
+    }
+
+    public function actionStart($key){
+        /** @var QuestService $q */
+        $q = \Yii::$app->q;
+
+        if($result = $q->startQuest($key)) {
+            $this->redirect(['run', 'key'=>$key]);
+        }
+
+        throw new NotFoundHttpException();
+    }
+
+    public function actionRun($key) {
+        /** @var QuestService $q */
+        $q = \Yii::$app->q;
+
+        $result = $q->getResultByKey($key);
+
+        if(empty($result->start_at))
+            return $this->redirect(['start', 'key'=>$key]);
+
+        if($result->load(\Yii::$app->request->post()) && $q->saveResult($result)) {
+            return $this->render('thanks', [
+                'quest' => $result->quest,
+                'model' => $result,
+            ]);
+        }
+
+        return $this->render('run', [
+            'quest' => $result->quest,
+            'model' => $result,
         ]);
     }
 

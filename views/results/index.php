@@ -26,18 +26,30 @@ $this->params['breadcrumbs'][] = $this->title;
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel,
         'columns' => [
+            [
+                'attribute' => 'quest_id',
+                'format' => 'html',
+                'value' => function ($model) {
+                    return $model->quest ? \yii\helpers\Html::a($model->quest->title, $model->quest->url) : null;
+                },
+                'filter' => \yii\helpers\ArrayHelper::map(\app\models\Quest::find()->all(), 'id', 'title'),
+            ],
             'email:email',
+            'phone',
             'first_name',
             'second_name',
-            'gender:boolean',
-            'birthday',
+//            'gender:boolean',
             'location',
-            // 'start_at',
-            // 'finish_at',
+//            'invated_at:datetime',
+//            'start_at:date',
+            'finish_at:date',
             //  'quest_id',
             // 'data:ntext',
 
-            ['class' => 'yii\grid\ActionColumn'],
+            [
+                'class' => 'yii\grid\ActionColumn',
+                'template' => '{view} {delete}'
+            ],
         ],
     ]); ?>
 

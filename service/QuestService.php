@@ -4,10 +4,15 @@ namespace app\service;
 
 use app\events\QuestEvent;
 use app\events\QuestionEvent;
+use app\events\ResultEvent;
 use app\exceptions\BadQuestException;
 use app\models\Quest;
 use app\models\Question;
+use app\models\Result;
 use yii\helpers\ArrayHelper;
+use yii\helpers\Html;
+use yii\web\NotFoundHttpException;
+use yii\widgets\DetailView;
 
 /**
  * Created for simple-questionnaire
@@ -28,12 +33,165 @@ class QuestService extends \yii\base\Component implements \yii\base\BootstrapInt
     const E_QUESTION_SAVED = 'E_QUESTION_SAVED';
     const E_QUESTION_DELETE = 'E_QUESTION_DELETE';
 
-    const GENDER_MALE = true;
-    const GENDER_FEMALE = false;
+    const E_INVATE_SEND = 'E_INVATE_SEND';
+    const E_QUEST_START = 'E_QUEST_START';
+    const E_QUEST_TIMEOUT = 'E_QUEST_TIMEOUT';
+    const E_QUEST_FINISH = 'E_QUEST_FINISH';
 
     public function bootstrap($app)
     {
+        \Yii::$app->on(self::E_QUEST_FINISH, function ($event) {
 
+            $result = $event->result;
+
+            $attributes = [
+                'id',
+                //'key',
+                'email:email',
+                [
+                    'attribute' => 'quest_id',
+                    'format' => 'html',
+                    'value' => $result->quest?$result->quest->title:null,
+                ],
+                'first_name',
+                'second_name',
+                [
+                    'attribute'=> 'gender',
+                    'value' => $result->gender?'Мужчина':'Женщина',
+                ],
+                'birthday:date',
+                'location',
+                'invated_at:datetime',
+                'start_at:datetime',
+                'finish_at:datetime',
+            ];
+
+            if(!empty($result->results)) {
+                $attributes[] = ['label' => 'Ответы на вопросы', 'value'=>''];
+                foreach ($result->results as $r) {
+                    $attributes[] = ['label' => $r['question'], 'value'=>$r['response']];
+                }
+            }
+
+            $html = DetailView::widget([
+                'model' => $result,
+                'attributes' => $attributes,
+            ]);
+
+            /** @var ResultEvent $event */
+            $mail = \Yii::$app->mailer->compose();
+
+            $result_email = $mail
+                ->setTo(\Yii::$app->params['adminEmail'])
+                ->setFrom(\Yii::$app->params['robot'])
+                ->setSubject('Резльтаты анкетирования')
+                ->setHtmlBody($html)
+                ->send();
+
+
+            d($result_email);die;
+
+        });
+    }
+
+
+    public function startQuest($key)
+    {
+        $result = $this->getResultByKey($key);
+        if(
+            (!empty($result->quest->timeout) && time() - $result->start_at > $result->quest->timeout) ||
+            ($result->quest->status == Quest::STATUS_OFF) ||
+            !empty($result->finish_at)
+        ) {
+
+            $event = new ResultEvent();
+            $event->result = $result;
+            \Yii::$app->trigger(self::E_QUEST_TIMEOUT, $event);
+
+            throw new NotFoundHttpException();
+        }
+
+        $result->updateAttributes(['start_at'=>time()]);
+
+        $event = new ResultEvent();
+        $event->result = $result;
+        \Yii::$app->trigger(self::E_INVATE_SEND, $event);
+
+        return $result;
+    }
+
+    /**
+     * @param $key
+     * @return Result
+     * @throws NotFoundHttpException
+     */
+    public function getResultByKey($key) {
+
+        if (($model = Result::find()->where(['key'=>$key])->one()) && empty($model->finish_at)) {
+            return $model;
+        }
+
+        throw new NotFoundHttpException();
+    }
+
+    public function saveResult(Result $result) {
+
+        $result->finish_at = time();
+        $result->scenario = 'quest';
+
+        if($result->save()) {
+            $event = new ResultEvent();
+            $event->result = $result;
+            \Yii::$app->trigger(self::E_QUEST_FINISH, $event);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param $quest_id
+     * @param $email
+     * @return bool|string
+     * @throws BadQuestException
+     */
+    public function invate($quest_id, $email)
+    {
+        $quest = $this->getQuest($quest_id, false);
+
+        $result = new Result();
+        $result->key = md5($quest_id . $email . time());
+        $result->email = $email;
+        $result->quest_id = $quest_id;
+
+        /** @var ResultEvent $event */
+        $mail = \Yii::$app->mailer->compose();
+
+        $url = \Yii::$app->urlManager->createAbsoluteUrl(['/quest/start', 'key' => $result->key]);
+
+        $mail_result = $mail
+            ->setTo($result->email)
+            ->setFrom(\Yii::$app->params['robot'])
+            ->setSubject('Вы приглашены на online-собеседование от комании ' . \Yii::$app->name)
+            ->setHtmlBody(nl2br("Приглашаем Вас на online собеседование в компанию " . \Yii::$app->name . "
+                    Для начала анкетирования Вам необходимо перейти по ссылке <a href='$url'>$url</a>
+                    По окончанию анкетирования сохраните результаты. С Вами свяжутся по окончании проверки Ваших результатов.
+                "))
+            ->send();
+
+        if ($mail_result) {
+            $result->save();
+
+            $event = new ResultEvent();
+            $event->result = $result;
+            \Yii::$app->trigger(self::E_INVATE_SEND, $event);
+
+            return $result->key;
+        }
+
+
+        return false;
     }
 
 
@@ -91,22 +249,23 @@ class QuestService extends \yii\base\Component implements \yii\base\BootstrapInt
      * @param Quest $quest
      * @param Question[] $questions
      */
-    public function saveQuestions(Quest $quest, $questions) {
+    public function saveQuestions(Quest $quest, $questions)
+    {
 
         $old_ids = ArrayHelper::map($quest->questions, 'id', 'id');
         $new_ids = ArrayHelper::map($questions, 'id', 'id');
 
         $del_ids = array_diff($old_ids, $new_ids);
 
-        if(!empty($del_ids)) {
-            foreach($del_ids as $id) {
+        if (!empty($del_ids)) {
+            foreach ($del_ids as $id) {
                 $this->deleteQuestion($id);
             }
         }
 
-        foreach($questions as $question) {
+        foreach ($questions as $question) {
             $question->quest_id = $quest->id;
-            if($question->save()) {
+            if ($question->save()) {
                 \Yii::$app->trigger(self::E_QUESTION_SAVED);
             }
         }
@@ -124,16 +283,13 @@ class QuestService extends \yii\base\Component implements \yii\base\BootstrapInt
     {
         $model = $this->getQuest($id);
 
-        if ($result = $model->delete()) {
+        $model->updateAttributes(['status'=>Quest::STATUS_OFF]);
 
-            $this->deleteQuestions($model);
+        $event = new QuestEvent();
+        $event->quest = $model;
+        \Yii::$app->trigger(self::E_QUEST_DELETE, $event);
 
-            $event = new QuestEvent();
-            $event->quest = $model;
-            \Yii::$app->trigger(self::E_QUEST_DELETE, $event);
-        }
-
-        return $result;
+        return true;
     }
 
     /**
@@ -142,10 +298,11 @@ class QuestService extends \yii\base\Component implements \yii\base\BootstrapInt
      * @return array
      * @throws BadQuestException
      */
-    public function loadQuestions(Quest $quest, $questions) {
+    public function loadQuestions(Quest $quest, $questions)
+    {
         $data = [];
 
-        foreach($questions as $question) {
+        foreach ($questions as $question) {
             $model = $this->getQuestion($question['id']);
             $model->setAttributes($question);
             $model->quest_id = $quest->id;
@@ -161,14 +318,15 @@ class QuestService extends \yii\base\Component implements \yii\base\BootstrapInt
      * @return Question[]
      * @throws BadQuestException
      */
-    public function getQuestions($key, $allowNew = true) {
-        if(!$key instanceof Quest) {
+    public function getQuestions($key, $allowNew = true)
+    {
+        if (!$key instanceof Quest) {
             $quest = $this->getQuest($key);
         } else {
             $quest = $key;
         }
 
-        if(!empty($quest->questions) || !$allowNew)
+        if (!empty($quest->questions) || !$allowNew)
             return $quest->questions;
 
         $question = new Question();
@@ -183,7 +341,8 @@ class QuestService extends \yii\base\Component implements \yii\base\BootstrapInt
      * @return Question|null|static
      * @throws BadQuestException
      */
-    public function getQuestion($id = null, $allowNew = true) {
+    public function getQuestion($id = null, $allowNew = true)
+    {
         if (empty($id) && $allowNew) {
             return new Question();
         }
@@ -194,7 +353,8 @@ class QuestService extends \yii\base\Component implements \yii\base\BootstrapInt
         throw new BadQuestException('Такого вопроса не существует.');
     }
 
-    public function deleteQuestion($id){
+    public function deleteQuestion($id)
+    {
         $model = $this->getQuestion($id);
 
         if ($result = $model->delete()) {
@@ -211,8 +371,9 @@ class QuestService extends \yii\base\Component implements \yii\base\BootstrapInt
     /**
      * @param Quest $quest
      */
-    public function deleteQuestions(Quest $quest){
-        foreach($quest->questions as $question) {
+    public function deleteQuestions(Quest $quest)
+    {
+        foreach ($quest->questions as $question) {
             $event = new QuestionEvent();
             $event->quest = $question;
             \Yii::$app->trigger(self::E_QUESTION_DELETE, $event);

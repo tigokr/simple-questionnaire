@@ -21,6 +21,9 @@ use Yii;
 class Quest extends \yii\db\ActiveRecord
 {
 
+    const STATUS_ON = 'on';
+    const STATUS_OFF = 'off';
+
     const TYPE_ALL = 'all-at-once';
     const TYPE_ONE = 'one-at-once';
 
@@ -79,6 +82,27 @@ class Quest extends \yii\db\ActiveRecord
      * @param null $v
      * @return array|null
      */
+    public static function status($v = null, $ln = null)
+    {
+        switch ($ln) {
+            default:
+                $list = [
+                    self::STATUS_OFF => 'Выкл.',
+                    self::STATUS_ON => 'Вкл.',
+                ];
+                break;
+        }
+
+        if (is_null($v))
+            return $list;
+
+        return isset($list[$v]) ? $list[$v] : null;
+    }
+
+    /**
+     * @param null $v
+     * @return array|null
+     */
     public static function type($v = null, $ln = null)
     {
         switch ($ln) {
@@ -112,6 +136,7 @@ class Quest extends \yii\db\ActiveRecord
     {
         return [
             [['title'], 'required'],
+            ['status', 'default', 'value'=>self::STATUS_ON],
             [['timeout'], 'safe'],
             [['title'], 'string', 'max' => 255],
             [['type'], 'string', 'max' => 40],
@@ -161,6 +186,10 @@ class Quest extends \yii\db\ActiveRecord
      */
     public function getQuestions(){
         return $this->hasMany(Question::className(), ['quest_id'=>'id']);
+    }
+
+    public function getUrl(){
+        return ['/quest/view', 'id'=>$this->id];
     }
 
 }

@@ -41,7 +41,7 @@ class Question extends \yii\db\ActiveRecord
                     self::TYPE_TEXTINPUT => 'Краткий ответ',
                     self::TYPE_TEXTAREA => 'Объёмный ответ',
                     self::TYPE_RADIOLIST => 'Выбор варинатов ответа',
-                    self::TYPE_FILE => 'Файл',
+                    //self::TYPE_FILE => 'Файл',
                 ];
                 break;
         }

@@ -9,6 +9,7 @@
 namespace app\models;
 
 use Yii;
+use yii\behaviors\TimestampBehavior;
 
 /**
  * This is the model class for table "result".
@@ -29,6 +30,11 @@ use Yii;
 class Result extends \yii\db\ActiveRecord
 {
 
+    public $results;
+
+    const GENDER_MALE = true;
+    const GENDER_FEMALE = false;
+
     /**
      * @inheritdoc
      */
@@ -43,13 +49,18 @@ class Result extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['key', 'email', 'first_name', 'second_name'], 'required'],
+            [['key', 'email'], 'required'],
+            [['first_name', 'second_name', 'location', 'birthday', 'gender', 'phone'], 'required', 'on'=>'quest'],
             [['gender'], 'boolean'],
-            [['birthday', 'start_at', 'finish_at', 'quest_id'], 'integer'],
+            [['start_at', 'finish_at', 'quest_id'], 'integer'],
             [['data'], 'string'],
-            [['key'], 'string', 'max' => 32],
+            [['key', 'phone'], 'string', 'max' => 40],
             [['email', 'first_name', 'second_name'], 'string', 'max' => 80],
             [['location'], 'string', 'max' => 255],
+            [['birthday'], 'filter', 'filter' => 'strtotime'],
+            [['birthday'], 'default', 'value' => time()],
+
+            ['results', 'safe'],
         ];
     }
 
@@ -66,20 +77,44 @@ class Result extends \yii\db\ActiveRecord
             'second_name' => 'Фамилия',
             'gender' => 'Пол',
             'birthday' => 'День рождения',
-            'location' => 'Адрес',
-            'start_at' => 'Start At',
-            'finish_at' => 'Finish At',
-            'quest_id' => 'Quest ID',
+            'location' => 'Место проживания',
+            'phone' => 'Телефон',
+            'invated_at' => 'Дата отправки приглашения',
+            'start_at' => 'Начало тестирования',
+            'finish_at' => 'Окончание тестирования',
+            'quest_id' => 'Анкета',
             'data' => 'Data',
+        ];
+    }
+
+    public function behaviors(){
+        return [
+            'timestamp' => [
+                'class' => TimestampBehavior::className(),
+                'createdAtAttribute' => 'invated_at',
+                'updatedAtAttribute' => false,
+            ]
         ];
     }
 
 
     /**
-     * @return \yii\db\ActiveQuery
+     * @return Quest
      */
     public function getQuest(){
         return $this->hasOne(Quest::className(), ['id'=>'quest_id']);
+    }
+
+    public function beforeValidate(){
+        parent::beforeValidate();
+
+        $this->data = \yii\helpers\Json::encode($this->results);
+        return true;
+    }
+
+    public function afterFind(){
+        parent::afterFind();
+        $this->results = \yii\helpers\Json::decode($this->data);
     }
 
 }

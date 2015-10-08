@@ -18,8 +18,8 @@ class ResultSearch extends Result
     public function rules()
     {
         return [
-            [['id', 'birthday', 'start_at', 'finish_at', 'quest_id'], 'integer'],
-            [['key', 'email', 'first_name', 'second_name', 'location', 'data'], 'safe'],
+            [['id', 'birthday', 'quest_id'], 'integer'],
+            [['key', 'email', 'first_name', 'second_name', 'location', 'data', 'phone'], 'safe'],
             [['gender'], 'boolean'],
         ];
     }
@@ -70,10 +70,10 @@ class ResultSearch extends Result
 
         $query->andFilterWhere(['like', 'key', $this->key])
             ->andFilterWhere(['like', 'email', $this->email])
+            ->andFilterWhere(['like', 'phone', $this->phone])
             ->andFilterWhere(['like', 'first_name', $this->first_name])
             ->andFilterWhere(['like', 'second_name', $this->second_name])
-            ->andFilterWhere(['like', 'location', $this->location])
-            ->andFilterWhere(['like', 'data', $this->data]);
+            ->andFilterWhere(['like', 'location', $this->location]);
 
         return $dataProvider;
     }

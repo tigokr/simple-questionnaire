@@ -18,7 +18,7 @@ class QuestSearch extends Quest
     public function rules()
     {
         return [
-            [['id', 'timeout'], 'integer'],
+            [['id', 'timeout', 'status'], 'integer'],
             [['title', 'type'], 'safe'],
         ];
     }
@@ -41,7 +41,7 @@ class QuestSearch extends Quest
      */
     public function search($params)
     {
-        $query = Quest::find();
+        $query = Quest::find()->where(['status'=>self::STATUS_ON]);
 
         // add conditions that should always apply here
 
@@ -61,6 +61,7 @@ class QuestSearch extends Quest
         $query->andFilterWhere([
             'id' => $this->id,
             'timeout' => $this->timeout,
+            'status' => $this->status,
         ]);
 
         $query->andFilterWhere(['like', 'title', $this->title])
