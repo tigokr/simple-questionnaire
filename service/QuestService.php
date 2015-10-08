@@ -33,60 +33,10 @@ class QuestService extends \yii\base\Component implements \yii\base\BootstrapInt
     const E_QUEST_START = 'E_QUEST_START';
     const E_QUEST_TIMEOUT = 'E_QUEST_TIMEOUT';
     const E_QUEST_FINISH = 'E_QUEST_FINISH';
+    const E_RESULT_DELETE = 'E_RESULT_DELETE';
 
     public function bootstrap($app)
     {
-        \Yii::$app->on(self::E_QUEST_FINISH, function ($event) {
-
-            $result = $event->result;
-
-            $attributes = [
-                'id',
-                //'key',
-                'email:email',
-                [
-                    'attribute' => 'quest_id',
-                    'format' => 'html',
-                    'value' => $result->quest?$result->quest->title:null,
-                ],
-                'first_name',
-                'second_name',
-                [
-                    'attribute'=> 'gender',
-                    'value' => $result->gender?'Мужчина':'Женщина',
-                ],
-                'birthday:date',
-                'location',
-                'invated_at:datetime',
-                'start_at:datetime',
-                'finish_at:datetime',
-            ];
-
-            if(!empty($result->results)) {
-                $attributes[] = ['label' => 'Ответы на вопросы', 'value'=>''];
-                foreach ($result->results as $r) {
-                    $attributes[] = ['label' => $r['question'], 'value'=>$r['response']];
-                }
-            }
-
-            $html = DetailView::widget([
-                'model' => $result,
-                'attributes' => $attributes,
-            ]);
-
-            /** @var ResultEvent $event */
-            $mail = \Yii::$app->mailer->compose();
-
-            $result_email = $mail
-                ->setTo(\Yii::$app->params['adminEmail'])
-                ->setFrom(\Yii::$app->params['robot'])
-                ->setSubject('Резльтаты анкетирования')
-                ->setHtmlBody($html)
-                ->send();
-
-                d($result_email);die;
-
-        });
     }
 
 
@@ -135,6 +85,51 @@ class QuestService extends \yii\base\Component implements \yii\base\BootstrapInt
         $result->scenario = 'quest';
 
         if($result->save()) {
+
+            $attributes = [
+                'id',
+                //'key',
+                'email:email',
+                [
+                    'attribute' => 'quest_id',
+                    'format' => 'html',
+                    'value' => $result->quest?$result->quest->title:null,
+                ],
+                'first_name',
+                'second_name',
+                [
+                    'attribute'=> 'gender',
+                    'value' => $result->gender?'Мужчина':'Женщина',
+                ],
+                'birthday:date',
+                'location',
+                'invated_at:datetime',
+                'start_at:datetime',
+                'finish_at:datetime',
+            ];
+
+            if(!empty($result->results)) {
+                $attributes[] = ['label' => 'Ответы на вопросы', 'value'=>''];
+                foreach ($result->results as $r) {
+                    $attributes[] = ['label' => $r['question'], 'value'=>$r['response']];
+                }
+            }
+
+            $html = DetailView::widget([
+                'model' => $result,
+                'attributes' => $attributes,
+            ]);
+
+            /** @var ResultEvent $event */
+            $mail = \Yii::$app->mailer->compose();
+
+            $mail
+                ->setTo(\Yii::$app->params['adminEmail'])
+                ->setFrom(\Yii::$app->params['robot'])
+                ->setSubject('Резльтаты анкетирования')
+                ->setHtmlBody($html)
+                ->send();
+
             $event = new ResultEvent();
             $event->result = $result;
             \Yii::$app->trigger(self::E_QUEST_FINISH, $event);
@@ -143,6 +138,20 @@ class QuestService extends \yii\base\Component implements \yii\base\BootstrapInt
         }
 
         return false;
+    }
+
+    public function cleanResults(){
+        $results = Result::find()->all();
+
+        foreach($results as $result) {
+            if($result->delete()) {
+                $event = new ResultEvent();
+                $event->result = $result;
+                \Yii::$app->trigger(self::E_RESULT_DELETE, $event);
+            }
+        }
+
+        return true;
     }
 
     /**

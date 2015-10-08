@@ -2,6 +2,7 @@
 
 namespace app\controllers;
 
+use app\service\QuestService;
 use Yii;
 use app\models\Result;
 use app\models\search\ResultSearch;
@@ -91,5 +92,19 @@ class ResultsController extends Controller
         } else {
             throw new NotFoundHttpException('The requested page does not exist.');
         }
+    }
+
+    public function actionClean(){
+        /** @var QuestService $q */
+        $q = \Yii::$app->q;
+
+        $q->cleanResults();
+
+        \Yii::$app->session->setFlash('alert', [
+            'body' =>'Результаты очищены!',
+            'options' => ['class' => 'alert alert-success']
+        ]);
+
+        return $this->redirect(['index']);
     }
 }
