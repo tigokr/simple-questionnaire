@@ -84,8 +84,7 @@ class QuestService extends \yii\base\Component implements \yii\base\BootstrapInt
                 ->setHtmlBody($html)
                 ->send();
 
-
-            d($result_email);die;
+                d($result_email);die;
 
         });
     }
@@ -266,7 +265,7 @@ class QuestService extends \yii\base\Component implements \yii\base\BootstrapInt
             }
         }
 
-        return $questions;
+        return true;
     }
 
     /**
@@ -298,12 +297,13 @@ class QuestService extends \yii\base\Component implements \yii\base\BootstrapInt
     {
         $data = [];
 
-        foreach ($questions as $question) {
-            $model = $this->getQuestion($question['id']);
-            $model->setAttributes($question);
-            $model->quest_id = $quest->id;
-            $data[] = $model;
-        }
+        if(!empty($questions))
+            foreach ($questions as $question) {
+                $model = $this->getQuestion($question['id']);
+                $model->setAttributes($question);
+                $model->quest_id = $quest->id;
+                $data[] = $model;
+            }
 
         return $data;
     }

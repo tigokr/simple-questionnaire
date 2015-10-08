@@ -45,7 +45,7 @@ $this->title = $quest->title;
                 <?php
                 $type = $question->type;
                 if($type == 'radioList')
-                    echo $form->field($model, "results[$i][response]")->$type( array_combine($question->question['responses'], $question->question['responses']) )->label(false);
+                    echo $form->field($model, "results[$i][response]")->$type( array_combine((array)$question->question['responses'], (array)$question->question['responses']) )->label(false);
                 elseif($type =='fileInput')
                     echo $form->field($model, "results[$i][response]")->$type()->label(false);
                 else
