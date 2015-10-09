@@ -39,7 +39,16 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
 
 
-            ['class' => \yii\grid\ActionColumn::className()],
+            [
+                'class' => \yii\grid\ActionColumn::className(),
+                'template' => '{questions} {view} {edit} {delete}',
+                'buttons' => [
+                    'questions' => function($key, $model, $url) {
+                        return \yii\bootstrap\Html::a('<i class="glyphicon glyphicon-question-sign"></i>', ['questions', 'quest_id'=>$model->id]);
+                    }
+                ]
+
+            ],
         ],
     ]); ?>
 
