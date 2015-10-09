@@ -30,10 +30,14 @@ $remove_question = <<< JS
     });
     $('.questions-update').on('click', '.add-answer', function(){
            var parent = $(this).closest('.row').parent();
-           $(this)
-            .closest('.row')
-                .clone()
-                .appendTo(parent);
+
+            var item = $('<div>').append(
+                $(this).closest('.row').clone()
+            ).html().replace(/responses\]\[\d+\]/g, 'responses][]')
+
+            parent.append(item);
+
+            $(parent).find('.row:last').find('input').val('').focus();
     })
 
     $('.question-type').bind('change', function(){
@@ -99,21 +103,23 @@ $this->registerJs($remove_question);
                     <div class="col-sm-4 <?= $isRadio ?: 'hidden'; ?> answers">
                         <?= Html::label('Ответы', Html::getInputId($model, "[$i]question[responses][]")); ?>
                         <?php
-                        if(!empty($model['responses']))
-                            $c = count($model['responses']);
+                        if (!empty($model['question']['responses']))
+                            $c = count($model['question']['responses']);
                         else
                             $c = 2;
 
-                        for($j=0; $j<$c;$j++): ?>
-                        <div class="row">
-                            <div class="col-xs-4">
-                                <a href="#" class="btn btn-primary add-answer"><i class="glyphicon glyphicon-plus"></i></a>
-                                <a href="#" class="btn btn-warning remove-answer"><i class="glyphicon glyphicon-minus"></i></a>
+                        for ($j = 0; $j < $c; $j++): ?>
+                            <div class="row">
+                                <div class="col-xs-4">
+                                    <a href="#" class="btn btn-primary add-answer"><i
+                                            class="glyphicon glyphicon-plus"></i></a>
+                                    <a href="#" class="btn btn-warning remove-answer"><i
+                                            class="glyphicon glyphicon-minus"></i></a>
+                                </div>
+                                <div class="col-xs-8">
+                                    <?= $form->field($model, "[$i]question[responses][$j]")->textInput()->label(false) ?>
+                                </div>
                             </div>
-                            <div class="col-xs-8">
-                                <?= $form->field($model, "[$i]question[responses][$j]")->textInput()->label(false) ?>
-                            </div>
-                        </div>
                         <?php endfor; ?>
 
                     </div>
