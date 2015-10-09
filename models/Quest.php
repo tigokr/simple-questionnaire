@@ -140,6 +140,7 @@ class Quest extends \yii\db\ActiveRecord
             [['timeout'], 'safe'],
             [['title'], 'string', 'max' => 255],
             [['type'], 'string', 'max' => 40],
+            [['type'], 'default', 'value' => self::TYPE_ALL],
         ];
     }
 

@@ -16,7 +16,7 @@ use yii\widgets\ActiveForm;
 
     <?= $form->field($model, 'timeout')->dropDownList( \app\models\Quest::timeout() ) ?>
 
-    <?= $form->field($model, 'type')->dropDownList(\app\models\Quest::type()) ?>
+    <?php // $form->field($model, 'type')->dropDownList(\app\models\Quest::type()) ?>
 
     <div class="form-group">
         <?= Html::submitButton($model->isNewRecord ? 'Сохранить' : 'Сохранить', ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
