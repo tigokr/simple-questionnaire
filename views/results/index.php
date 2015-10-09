@@ -22,7 +22,9 @@ $this->params['breadcrumbs'][] = $this->title;
         ],]) ?>
     </p>
 
-    <?= GridView::widget([
+    <?php 
+	$dataProvider->query->orderBy('invated_at desc');
+	echo GridView::widget([
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel,
         'columns' => [
